@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>BOSYfox</title>
+    <style id="theme-style">
+      :root {
+	  --bg-color: white;
+	  --text-color: black;
+	  --accent-color: #007BFF;
+	  --button-bg: #E0E0E0;
+	  --button-text: black;
+      }
+
+      body {
+	  background-color: var(--bg-color);
+	  color: var(--text-color);
+      }
+
+      #menu-bar button {
+	  background-color: var(--button-bg);
+	  color: var(--button-text);
+	  margin: 2px;
+	  border: none;
+	  padding: 6px;
+	  border-radius: 6px;
+      }
+
+      #menu-bar input {
+	  padding: 6px;
+	  border-radius: 6px;
+	  border: 1px solid gray;
+      }
+    </style>
+  </head>
+  <body style="height: 100vh;">
+    <div id="menu-bar">
+      <input id="q" style="width: 50%" placeholder="Search with internet or enter address"></input>
+      <button id="qs">Search</button>
+      <text id="status"></text>
+      <button id="devtools">Page DevTools</button>
+      <button id="prev">History <=</button>
+      <button id="next">History >=</button>
+      <button id="tnew">New tab</button>
+      <button id="tclose">Close tab</button>
+      <button id="tprev">Tab <=</button>
+      <button id="tnext">Tab >=</button>
+      <button id="zoomin">🔎-</button>
+      <button id="zoomout">🔎+</button>
+      <button id="zoomdef">🔎0</button>
+      <button id="screenshot">📸</button>
+    </div>
+    <script type="module">
+      import {$} from "./bq.js";
+      const { clipboard } = require('electron');
+      const input = $('q').domGetId().unwrap();
+      const search = $('qs').domGetId().unwrap();
+      
+      const statusbar = $('status').domGetId().unwrap();
+
+      let tabs = [];
+      let curr_tab_id = 0;
+
+      let zoom = 1.0;
+
+      let plugins = [];
+      
+      let last_addr = null;
+
+      let view = null;
+
+      $("onDom").methodGet(() => {
+	  newTab("file://" + __dirname + "/homepage.html");
+      })();
+      
+      $("devtools").domGetId().unwrap().onclick = () => {view.openDevTools();};
+      $("prev").domGetId().unwrap().onclick = () => {view.goBack();};
+      $("next").domGetId().unwrap().onclick = () => {view.goForward();};
+      $("tnew").domGetId().unwrap().onclick = () => {newTab("file://" + __dirname + "/homepage.html");};
+      $("tclose").domGetId().unwrap().onclick = () => {removeTab(curr_tab_id);};
+      $("tprev").domGetId().unwrap().onclick = () => {if (curr_tab_id) {--curr_tab_id;} switchTab(curr_tab_id);};
+      $("tnext").domGetId().unwrap().onclick = () => {if (curr_tab_id < tabs.length - 1) {++curr_tab_id;} switchTab(curr_tab_id);};
+      $("zoomin").domGetId().unwrap().onclick = () => {zoom -= 0.1 * zoom; view.setZoomFactor(zoom);};
+      $("zoomout").domGetId().unwrap().onclick = () => {zoom += 0.1 * zoom; view.setZoomFactor(zoom);};
+      $("zoomdef").domGetId().unwrap().onclick = () => {zoom = 1.0; view.setZoomFactor(zoom);};
+      $("screenshot").domGetId().unwrap().onclick = () => {view.capturePage().then((pic) => {clipboard.writeImage(pic)});};
+
+      function newTab(url) {
+	  console.log("newTab("+url+")");
+	  const newview = document.createElement("webview");
+	  newview.style = "width: 100%; height: 100vh;";
+	  newview.allowpopups = true;
+	  newview.addEventListener('did-start-loading', () => {statusbar.innerHTML = '<img src="extern/load.gif" style="width: 30px;"></img>';});
+	  newview.addEventListener('did-stop-loading', () => {statusbar.innerHTML = 'loaded';});
+	  newview.src = url;
+	  document.body.appendChild(newview);
+	  let loaded = false;
+	  newview.addEventListener("dom-ready", () => {
+	      if (loaded) return;
+	      loaded = true;
+	      console.log("dom-ready;");
+	      tabs.push(newview);
+	      switchTab(tabs.length - 1);
+	  });
+      }
+      const themes = {
+	  light: {
+	      "--bg-color": "#ffffff",
+	      "--text-color": "#000000",
+	      "--accent-color": "#007bff",
+	      "--button-bg": "#f0f0f0",
+	      "--button-text": "#000000"
+	  },
+	  dark: {
+	      "--bg-color": "#121212",
+	      "--text-color": "#ffffff",
+	      "--accent-color": "#00d0ff",
+	      "--button-bg": "#2c2c2c",
+	      "--button-text": "#ffffff"
+	  },
+	  red: {
+	      "--bg-color": "#2a0000",
+	      "--text-color": "#ff4d4d",
+	      "--accent-color": "#ff0000",
+	      "--button-bg": "#400000",
+	      "--button-text": "#ff9999"
+	  },
+	  chromium: {
+	      "--bg-color": "#e6f7ff",
+	      "--text-color": "#003366",
+	      "--accent-color": "#66ccff",
+	      "--button-bg": "#cceeff",
+	      "--button-text": "#003366"
+	  }
+      };
+      function applyTheme(themeName) {
+	  const root = document.documentElement;
+	  const theme = themes[themeName];
+	  for (const varName in theme) {
+	      root.style.setProperty(varName, theme[varName]);
+	  }
+      }
+      function switchTab(id) {
+	  const nextview = tabs[id];
+	  tabs.forEach((tab, i) => {
+              tab.style.display = (i === id) ? "" : "none";
+	  });
+	  view = nextview;
+	  last_addr = view.src;
+	  input.value = "!u"+last_addr;
+	  curr_tab_id = id;
+	  console.log(tabs, curr_tab_id);
+      }
+      function removeTab(id) {
+	  tabs.splice(id);
+      }
+      
+      function loadPlugin(url) {
+	  import(url).then(mod => {
+	      const m = mod.load(url);
+	      console.log(m);
+	      let exists = false;
+	      for (const plugi in plugins) {
+		  const plug = plugins[plugi];
+		  if (plug.plugid === m.plugid) {
+		      exists = true;
+		      plugins[plugi] = m;
+		  }
+	      }
+	      if (!exists) {
+		  plugins.push(m);
+	      }
+	  });
+      }
+      loadPlugin("./userPlugin.js");
+      function doSearch() {
+	  const query = input.value.trim();
+	  let res;
+
+	  if (query[0] === '!') {
+	      const s = query[1];
+	      if (s === '!') {
+		  res = "https://google.com/search?q=" + query.substring(2);
+	      }
+	      else if (s === 'u') {
+		  res = query.substring(2);
+	      }
+	      else if (s === 'p') {
+		  res = query.substring(2);
+		  loadPlugin(res);
+		  return;
+	      }
+	      else if (s === 'g') {
+		  res = "https://google.com/search?q=" + query.substring(2);
+	      }
+	      else if (s === 'd') {
+		  res = "https://duckduckgo.com/?q=" + query.substring(2);
+	      }
+	      else if (s === 'y') {
+		  res = "https://yandex.ru/search?text=" + query.substring(2);
+	      }
+	      else if (s === 'f') {
+		  const f = query.substring(2);
+		  if (f === "bosycad") {
+		      res = "file://" + __dirname + "/bosycad/index.html";
+		  }
+		  else if (f === "reload") {
+		      window.location.reload();
+		  }
+		  else if (f === "help") {
+		      res = "file://" + __dirname + "/help.html";
+		  }
+		  else if (f === "home") {
+		      res = "file://" + __dirname + "/homepage.html";
+		  }
+		  else {
+		      for (const plugin of plugins) {
+			  if (plugin && plugin.doFunc) {
+			      const d = plugin.doFunc(f);
+			      console.log(d);
+			      if (d) {res = d;}
+			  }
+		      }
+		  }
+	      }
+	      else if (s === 't') {
+		  res = query.substring(2);
+		  const sp = res.split("2");
+		  console.log(sp);
+		  const a = sp[0];
+		  const b = sp[1];
+		  res = "https://translate.google.com/?sl="+a+"&tl="+b+"&op=translate";
+	      }
+	  }
+	  else {
+	      res = "https://google.com/search?q=" + query;
+	  }
+	  for (const plugin of plugins) {
+	      if (plugin && plugin.doSearch) {
+		  const d = plugin.doSearch(query);
+		  if (d) {res = d;}
+	      }
+	  }
+
+	  if (res) {
+	      console.log(view, res);
+	      view.loadURL(res);
+	      last_addr = res;
+	      input.value = '!u' + res;
+	  }
+      }
+
+      function ticker() {
+	  for (const plugin of plugins) {
+	      if (plugin && plugin.tick) {
+		  plugin.tick();
+	      }
+	  }
+	  if (view.src !== last_addr) {
+	      last_addr = view.src;
+	      input.value = '!u' + last_addr;
+	  }
+      }
+
+      setInterval(ticker, 100);
+      
+      search.onclick = doSearch;
+      input.onkeydown = (e) => {
+	  if (e.key === 'Enter') {
+	      doSearch();
+	  }
+      };
+      window.onkeydown = (e) => {
+	  for (const plugin of plugins) {
+	      if (plugin && plugin.keyDown) {
+		  plugin.keyDown(e.key);
+	      }
+	  }
+      };
+    </script>
+  </body>
+</html>

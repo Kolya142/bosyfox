@@ -1,0 +1,35 @@
+const elc = require("electron");
+
+var win = null;
+
+fn createWindow() {
+    elc.Menu.setApplicationMenu(null);
+
+    win = new elc.BrowserWindow({
+	width: 800,
+	height: 600,
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false,
+	    webSecurity: false,
+            webviewTag: true
+        }
+    });
+    win.webContents.on('before-input-event', (_, input) => {
+	if (input.type == 'keyDown' && input.key == 'F12') {
+	    win.webContents.isDevToolsOpened()
+		? win.webContents.closeDevTools()
+		: win.webContents.openDevTools({ mode: 'right' });
+	}
+    });
+    win.loadFile('plugins/browser.html');
+}
+
+
+elc.app.whenReady().then(createWindow);
+
+elc.app.on('window-all-closed', () => {
+    if (process.platform != 'darwin') {
+	elc.app.quit()
+    }
+})

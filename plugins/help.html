@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>BOSYfox about page</title>
+  </head>
+  <body>
+    <h1>
+      BOSY - Busy Open Software Yield<br>
+      BOSYfox is part of the BOSY project
+    </h1>
+    <h1>Search query</h1>
+    !! - raw google search<br>
+    !u - raw URL<br>
+    !p - load Plugin<br>
+    !g - Google search<br>
+    !d - Duckduckgo search<br>
+    !y - Yandex search<br>
+    !f - builtin Function: !fbosycad - open BOSYCAD; !freload - reload browser; !fhelp - open this page<br>
+    !t - google Translate !tFROM2TO. Example: !tru2en<br>
+    default case - just search in google
+    <h1>Plugin API</h1>
+    <code>export function load(plug_filename) {return {...};}</code> - Plugin init function<br>
+    <code>.keyDown(key)</code><br>
+    <code>.tick()</code><br>
+    <code>.doSearch(query)</code> - Plugin any search<br>
+    <code>.doFunc(query)</code> - Plugin !f search<br>
+    <code>.plugid</code> - Plugin ID, format DOMAIN.COMPANY.APPID
+  </body>
+</html>

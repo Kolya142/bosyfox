@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+    <head>
+	<title>BosyCAD</title>
+    </head>
+    <body>
+        <canvas id="canvas" style="position: absolute; top: 0; left: 0;"></canvas>
+        <div style="position: absolute; transform: scale(0.6); transform-origin: top left; top: 0; left: 0">
+	    <br>
+            <button onclick="handleKey('1', false);"><img src="icon01.png" title="Rectangle(1)" /></button>
+            <button onclick="handleKey('2', false);"><img src="icon02.png" title="Line(2)" /></button>
+            <button onclick="handleKey('3', false);"><img src="icon03.png" title="Circle(3)" /></button>
+            <button onclick="handleKey('4', false);"><img src="icon04.png" title="Polygon(4)" /></button>
+            <button onclick="handleKey('5', false);"><img src="icon20.png" title="Ruler(5)" /></button>
+            <button onclick="handleKey('Enter', false);"><img src="icon18.png" title="Submit(Enter)" /></button>
+            <button onclick="handleKey('I', false);"><img src="icon05.png" title="Manualy insert point(I)" /></button>
+            <button onclick="handleKey('C', false);"><img src="icon06.png" title="Clear points(C)" /></button>
+            <button onclick="handleKey('s', false);"><img src="icon07.png" title="Stroke(s)" /></button>
+            <button onclick="handleKey('f', false);"><img src="icon08.png" title="Fill(f)" /></button>
+            <button onclick="handleKey('b', false);"><img src="icon09.png" title="Set background(b)" /></button>
+            <button onclick="handleKey('[', false);"><img src="icon10.png" title="Previous([)" /></button>
+            <button onclick="handleKey(']', false);"><img src="icon11.png" title="Next(])" /></button>
+            <button onclick="handleKey('G', false);"><img src="icon12.png" title="Setup grid(G)" /></button>
+            <button onclick="handleKey('S', false);"><img src="icon13.png" title="Set color(S)" /></button>
+            <button onclick="handleKey('Backspace', false);"><img src="icon19.png" title="Delete selected(Backspace)" /></button>
+            <button onclick="handleKey('a', false);"><img src="icon14.png" title="Append style to selected(a)" /></button>
+            <button onclick="handleKey('A', false);"><img src="icon15.png" title="Get style from selected(A)" /></button>
+            <button onclick="handleKey('q', false);"><img src="icon16.png" title="Swap selected and next(q)" /></button>
+            <button onclick="handleKey('Z', false);"><img src="icon17.png" title="Pop point(Z)" /></button>
+        </div>
+        <div style="position: absolute; top: 40px; right: 0; max-width: 300px; width: 300px">
+             <p id="ruler">Ruler: 0</p>
+             Actions:<hr>
+             <p id="actions" style="width: calc(100% - 10px); height: auto"></p>
+        </div>
+        <script src="index.bpp.js"></script>
+    </body>
+</html>
