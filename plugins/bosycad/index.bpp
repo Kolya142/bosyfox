@@ -45,8 +45,9 @@ fn prompt(message, defaultValue = "") {
 
 	    input.value = defaultValue;
 	    messageBox.textContent = message;
-	    modal.style.display = "";
+	    modal.style.display = "block";
 	    input.focus();
+	    canvas.blur();
 
 	    fn closePrompt(result) {
 		modal.style.display = "none";
