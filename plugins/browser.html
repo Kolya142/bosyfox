@@ -32,30 +32,34 @@
       }
     </style>
   </head>
-  <body style="height: 100vh;">
+  <body style="height: 100vh; overflow: hidden">
     <div id="menu-bar">
+      <div id="tab-bar"></div><hr>
       <input id="q" style="width: 50%" placeholder="Search with internet or enter address"></input>
       <button id="qs">Search</button>
       <text id="status"></text>
       <button id="devtools">Page DevTools</button>
       <button id="prev">History <=</button>
-      <button id="next">History >=</button>
+				  <button id="next">History >=</button>
       <button id="tnew">New tab</button>
       <button id="tclose">Close tab</button>
       <button id="tprev">Tab <=</button>
-      <button id="tnext">Tab >=</button>
+			       <button id="tnext">Tab >=</button>
       <button id="zoomin">🔎-</button>
       <button id="zoomout">🔎+</button>
       <button id="zoomdef">🔎0</button>
       <button id="screenshot">📸</button>
+      <button id="gotohome">🏠</button>
+      <hr id="bottom">
     </div>
-    <script type="module">
-      import {$} from "./bq.js";
+    <script>
       const { clipboard } = require('electron');
-      const input = $('q').domGetId().unwrap();
-      const search = $('qs').domGetId().unwrap();
+      const input = document.getElementById('q');
+      const search = document.getElementById('qs');
+      const tab_bar = document.getElementById('tab-bar');
+      const bottom_el = document.getElementById('bottom');
       
-      const statusbar = $('status').domGetId().unwrap();
+      const statusbar = document.getElementById('status');
 
       let tabs = [];
       let curr_tab_id = 0;
@@ -67,27 +71,45 @@
       let last_addr = null;
 
       let view = null;
-
-      $("onDom").methodGet(() => {
-	  newTab("file://" + __dirname + "/homepage.html");
-      })();
       
-      $("devtools").domGetId().unwrap().onclick = () => {view.openDevTools();};
-      $("prev").domGetId().unwrap().onclick = () => {view.goBack();};
-      $("next").domGetId().unwrap().onclick = () => {view.goForward();};
-      $("tnew").domGetId().unwrap().onclick = () => {newTab("file://" + __dirname + "/homepage.html");};
-      $("tclose").domGetId().unwrap().onclick = () => {removeTab(curr_tab_id);};
-      $("tprev").domGetId().unwrap().onclick = () => {if (curr_tab_id) {--curr_tab_id;} switchTab(curr_tab_id);};
-      $("tnext").domGetId().unwrap().onclick = () => {if (curr_tab_id < tabs.length - 1) {++curr_tab_id;} switchTab(curr_tab_id);};
-      $("zoomin").domGetId().unwrap().onclick = () => {zoom -= 0.1 * zoom; view.setZoomFactor(zoom);};
-      $("zoomout").domGetId().unwrap().onclick = () => {zoom += 0.1 * zoom; view.setZoomFactor(zoom);};
-      $("zoomdef").domGetId().unwrap().onclick = () => {zoom = 1.0; view.setZoomFactor(zoom);};
-      $("screenshot").domGetId().unwrap().onclick = () => {view.capturePage().then((pic) => {clipboard.writeImage(pic)});};
+      document.getElementById("devtools").onclick = () => {view.openDevTools();};
+      document.getElementById("prev").onclick = () => {view.goBack();};
+      document.getElementById("next").onclick = () => {view.goForward();};
+      document.getElementById("tnew").onclick = () => {newTab("file://" + __dirname + "/homepage.html");};
+      document.getElementById("tclose").onclick = () => {removeTab(curr_tab_id);};
+      document.getElementById("tprev").onclick = () => {if (curr_tab_id) {--curr_tab_id;} switchTab(curr_tab_id);};
+      document.getElementById("tnext").onclick = () => {if (curr_tab_id < tabs.length - 1) {++curr_tab_id;} switchTab(curr_tab_id);};
+      document.getElementById("zoomin").onclick = () => {zoom -= 0.1 * zoom; view.setZoomFactor(zoom);};
+      document.getElementById("zoomout").onclick = () => {zoom += 0.1 * zoom; view.setZoomFactor(zoom);};
+      document.getElementById("zoomdef").onclick = () => {zoom = 1.0; view.setZoomFactor(zoom);};
+      document.getElementById("screenshot").onclick = () => {view.capturePage().then((pic) => {clipboard.writeImage(pic)});};
+      document.getElementById("gotohome").onclick = () => {last_addr = "file://" + __dirname + "/homepage.html"; input.value = "!u:"+last_addr; view.loadURL(last_addr);};
+
+
+      function rebuildTabBar() {
+	  view.style.top = bottom_el.getBoundingClientRect().bottom + "px";
+	  view.style.bottom = 0;
+	  tab_bar.innerHTML = "";
+	  tabs.forEach((tab, tab_id) => {
+	      const button = document.createElement("button");
+
+	      const label = (tab_id === curr_tab_id ? "[x] " : "[ ] ") + tab.src;
+	      button.textContent = label;
+
+	      button.onclick = () => {switchTab(tab_id)};
+	      tab_bar.appendChild(button);
+	  });
+      }
+
 
       function newTab(url) {
 	  console.log("newTab("+url+")");
 	  const newview = document.createElement("webview");
-	  newview.style = "width: 100%; height: 100vh;";
+	  newview.style.position = "absolute";
+	  newview.style.width = "100%";
+	  newview.style.left = "0";
+	  newview.style.right = "0";
+
 	  newview.allowpopups = true;
 	  newview.addEventListener('did-start-loading', () => {statusbar.innerHTML = '<img src="extern/load.gif" style="width: 30px;"></img>';});
 	  newview.addEventListener('did-stop-loading', () => {statusbar.innerHTML = 'loaded';});
@@ -132,28 +154,36 @@
 	      "--button-text": "#003366"
 	  }
       };
-      function applyTheme(themeName) {
-	  const root = document.documentElement;
-	  const theme = themes[themeName];
+      function applyTheme(theme) {
 	  for (const varName in theme) {
-	      root.style.setProperty(varName, theme[varName]);
+	      document.documentElement.style.setProperty(varName, theme[varName]);
 	  }
       }
+      applyTheme(themes["chromium"]);
       function switchTab(id) {
 	  const nextview = tabs[id];
 	  tabs.forEach((tab, i) => {
-              tab.style.display = (i === id) ? "" : "none";
+	      tab.style.display = (i === id) ? "" : "none";
 	  });
+	  console.log("nextview", nextview);
 	  view = nextview;
 	  last_addr = view.src;
 	  input.value = "!u"+last_addr;
 	  curr_tab_id = id;
 	  console.log(tabs, curr_tab_id);
+	  rebuildTabBar();
       }
       function removeTab(id) {
-	  tabs.splice(id);
+	  const tab = tabs[id];
+	  if (tab) {
+	      tab.remove();
+	      tabs.splice(id, 1);
+	      if (id >= tabs.length) id = tabs.length - 1;
+	      switchTab(id >= 0 ? id : 0);
+	  }
+	  rebuildTabBar();
       }
-      
+
       function loadPlugin(url) {
 	  import(url).then(mod => {
 	      const m = mod.load(url);
@@ -171,7 +201,6 @@
 	      }
 	  });
       }
-      loadPlugin("./userPlugin.js");
       function doSearch() {
 	  const query = input.value.trim();
 	  let res;
@@ -259,6 +288,7 @@
 	      last_addr = view.src;
 	      input.value = '!u' + last_addr;
 	  }
+	  rebuildTabBar();
       }
 
       setInterval(ticker, 100);
@@ -275,7 +305,22 @@
 		  plugin.keyDown(e.key);
 	      }
 	  }
+	  if (e.altKey && e.key === "ArrowRight") {
+	      if (curr_tab_id < tabs.length - 1) {
+		  ++curr_tab_id;
+	      }
+	      switchTab(curr_tab_id);
+	  };
+	  if (e.altKey && e.key === "ArrowLeft") {
+	      if (curr_tab_id) {
+		  --curr_tab_id;
+	      }
+	      switchTab(curr_tab_id);
+	  };
       };
+
+      newTab("file://" + __dirname + "/homepage.html");
+      loadPlugin("./userPlugin.js");
     </script>
   </body>
 </html>

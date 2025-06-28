@@ -36,6 +36,34 @@ struct Poly extends Object {
     points
 }
 
+fn prompt(message, defaultValue = "") {
+    return new Promise((resolve) => {
+	setTimeout(() => {
+	    const modal = document.getElementById("prompt-modal");
+	    const input = document.getElementById("prompt-input");
+	    const messageBox = document.getElementById("prompt-message");
+
+	    input.value = defaultValue;
+	    messageBox.textContent = message;
+	    modal.style.display = "";
+	    input.focus();
+
+	    fn closePrompt(result) {
+		modal.style.display = "none";
+		resolve(result);
+	    }
+
+	    document.getElementById("prompt-ok").onclick = () => closePrompt(input.value);
+	    document.getElementById("prompt-cancel").onclick = () => closePrompt(null);
+	    input.onkeydown = (e) => {
+		if (e.key == "Enter") closePrompt(input.value);
+		if (e.key == "Escape") closePrompt(null);
+	    };
+	}, 100);
+    });
+}
+
+
 var objects = [];
 var draw_style = "stroke";
 var curr_style = "stroke";
@@ -403,9 +431,13 @@ fn handleKey(key, ctrl) {
 		curr_poses = [];
             }
 	    "I" {
-	        let s = prompt("Insert coord(example: \"500;200\"): ");
-		let splt = s.split(";");
-		curr_poses.push(Vec2(Number(splt[0]), Number(splt[1])));
+		prompt("Insert coord(example: \"500;200\"): ").then((s) => {
+		    let splt = s.split(";");
+		    curr_poses.push(Vec2(Number(splt[0]), Number(splt[1])));
+		    redraw();
+		    show();
+		    updateFields();
+		});
 	    }
 	    "C" {
 	        curr_poses = [];
@@ -427,10 +459,20 @@ fn handleKey(key, ctrl) {
                 ++selected;
             }
 	    "G" {
-		grid = Number(prompt("Grid size(0 - disables)"));
+		prompt("Grid size(0 - disables)").then((s) => {
+		    grid = Number(s);
+		    redraw();
+		    show();
+		    updateFields();
+		});
 	    }
 	    "S" {
-		curr_color = prompt("Enter color:");
+		prompt("Enter color:").then((res) => {
+		    curr_color = res;
+		    redraw();
+		    show();
+		    updateFields();
+		});
 	    }
 	    "Backspace" {
 	        objects.splice(selected, 1);

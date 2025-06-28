@@ -28,7 +28,14 @@
             <button onclick="handleKey('q', false);"><img src="icon16.png" title="Swap selected and next(q)" /></button>
             <button onclick="handleKey('Z', false);"><img src="icon17.png" title="Pop point(Z)" /></button>
         </div>
-        <div style="position: absolute; top: 40px; right: 0; max-width: 300px; width: 300px">
+
+	<div id="prompt-modal" style="display: none; position: fixed; top: 30%; left: 50%; transform: translateX(-50%); background: white; border: 1px solid gray; padding: 1em; z-index: 1000; box-shadow: 0 0 10px rgba(0,0,0,0.3);">
+	  <div id="prompt-message" style="margin-bottom: 0.5em;"></div>
+	  <input id="prompt-input" style="width: 100%; margin-bottom: 0.5em;">
+	  <button id="prompt-ok">OK</button>
+	  <button id="prompt-cancel">Cancel</button>
+	</div>
+	<div style="position: absolute; top: 40px; right: 0; max-width: 300px; width: 300px">
              <p id="ruler">Ruler: 0</p>
              Actions:<hr>
              <p id="actions" style="width: calc(100% - 10px); height: auto"></p>
